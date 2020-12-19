@@ -1,20 +1,40 @@
-import threading
 import mqtt
-
-
+from doublerachet import Rachet
+import doublerachet
 
 def main():
 
     name_from = input("FROM: ")
     name_to = input("TO: ")
-    client = mqtt.connect_mqtt(name_from)
-    hilo1 = threading.Thread(target=mqtt.subscribe,args=(client,name_from,) )
-    hilo1.start()
+    server=  mqtt.mqtt()
+    server.connect_mqtt(name_from,"sinf","snif20")
+
+  
+
+
     while True:
         msg=input("MESSAGE: ")
-        mqtt.publish(msg,name_to,client)
+        server.publish(msg,name_to)
+    
+
+
+
+def rachet():
+    alice = Rachet()
+    pk_a = alice.public_key
+    bob = Rachet()
+    pk_b=bob.public_key
+    dh_out=alice.dhstep(pk_b)
+    rk,ck=doublerachet.kdf_rk(alice.rk,dh_out)
+    mk,ck=doublerachet.kdf_ck(ck)
+    ct=doublerachet.encrypt("test",mk)
+    print(ct)
+    msg=doublerachet.decrypt(ct,mk)
+    print(msg)
+
     
 
 
 if __name__ == '__main__':
-    main()
+    #main()
+    rachet()
