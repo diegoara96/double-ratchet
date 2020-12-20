@@ -61,36 +61,14 @@ def RatchetEncrypt(rachet, plaintext):
     return response
 
 def RatchetDecrypt(rachet, response):
-    plaintext = TrySkippedMessageKeys(rachet, response)
-    if plaintext != None:
-        return plaintext
     DHr=load_pem_public_key(bytes(response["DH"],encoding='utf-8'), backend=default_backend())
     if response["DH"] != getPublicDHr(rachet): 
-        print("clave publica diferente")
-        SkipMessageKeys(rachet, response["PN"])          
-        DHRatchet(rachet, DHr)
-    SkipMessageKeys(rachet, response["PN"])           
+        print("Generating new public key")       
+        DHRatchet(rachet, DHr)        
     rachet.CKr, mk = kdf_ck(rachet.CKr)
     print(mk)
     rachet.Nr += 1
     return decrypt(response["C"],mk)
-
-def TrySkippedMessageKeys(state:Rachet, response):
-    if (response["DH"], response["N"]) in state.MKSKIPPED:
-        mk = state.MKSKIPPED[response["DH"], response["N"]]
-        del state.MKSKIPPED[response["DH"], response["N"]]
-        return decrypt(response["C"],mk )
-    else:
-        return None
-
-def SkipMessageKeys(state, until):
-    if state.Nr + MAX_SKIP < until:
-        raise Exception()
-    if state.CKr != None:
-        while state.Nr < until:
-            state.CKr, mk = kdf_ck(state.CKr)
-            state.MKSKIPPED[state.DHr, state.Nr] = mk
-            state.Nr += 1
 
 def encrypt(msg:str,key):
     aesgcm = AESGCM(key)

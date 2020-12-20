@@ -26,7 +26,7 @@ def main():
             msg=json.dumps({"DH":None,"C":None})
             publish(server,msg,name_to)
             result_available.wait()
-            print("clave publica")
+            print("Asking for the receiver's new public key")
         message=doublerachet.RatchetEncrypt(rachet,message)
         publish(server,message,name_to)
     
@@ -49,7 +49,7 @@ def subscribe(client,name_from,rachet:Rachet,name_to):
                 param = doublerachet.getParametersDH(rachet=rachet)
                 message=json.dumps({"DH":public,"PN":rachet.PN, "N":rachet.Ns,"C":None,"PAM":param})
                 publish(client,message,name_to)
-                print("enviando parametros")
+                print("Sending parameters")
         else:            
             messaege=doublerachet.RatchetDecrypt(rachet,response)
             print(messaege)
