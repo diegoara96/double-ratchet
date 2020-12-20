@@ -63,7 +63,7 @@ def RatchetEncrypt(rachet, plaintext):
 def RatchetDecrypt(rachet, response):
     DHr=load_pem_public_key(bytes(response["DH"],encoding='utf-8'), backend=default_backend())
     if response["DH"] != getPublicDHr(rachet): 
-        print("Generating new public key")       
+        print("\nGenerating new public key")       
         DHRatchet(rachet, DHr)        
     rachet.CKr, mk = kdf_ck(rachet.CKr)
     print(mk)

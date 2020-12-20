@@ -49,7 +49,7 @@ def subscribe(client,name_from,rachet:Rachet,name_to):
                 param = doublerachet.getParametersDH(rachet=rachet)
                 message=json.dumps({"DH":public,"PN":rachet.PN, "N":rachet.Ns,"C":None,"PAM":param})
                 publish(client,message,name_to)
-                print("Sending parameters")
+                print("\nSending parameters")
         else:            
             messaege=doublerachet.RatchetDecrypt(rachet,response)
             print(messaege)
