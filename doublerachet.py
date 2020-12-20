@@ -8,18 +8,20 @@ import json
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat, ParameterFormat
 import base64
 
+MAX_SKIP =10
+
 class Rachet():
     def __init__(self):
         self.parameters = dh.generate_parameters(generator=2, key_size=512,backend=default_backend())
         self.DHs = self.parameters.generate_private_key()
-        self.DHr =0
+        self.DHr =self.DHs.public_key()
         self.PN=0
         self.Ns=0
         self.Nr=0
         self.CKr=0
         self.CKs=0
         self.RK = b'V\xb6\xb1\x92&!Q~\xcd\x7f\xb1\xf5\xee\xefJ\xeb'
-        
+        self.MKSKIPPED={}
 
 
 def dhstep(private_key,peer_public_key):
@@ -41,7 +43,7 @@ def kdf_ck(ck):
     return (ck,mk)
     
 
-def DHRatchet(state:Rachet, DHr):
+def DHRatchet(state:Rachet, DHr:dh.DHPublicKey):
     state.PN = state.Ns                          
     state.Ns = 0
     state.Nr = 0
@@ -55,16 +57,40 @@ def RatchetEncrypt(rachet, plaintext):
     rachet.CKs, mk = kdf_ck(rachet.CKs)
     response =  json.dumps({"DH":getPublicDH(rachet), "PN":rachet.PN, "N":rachet.Ns,"C":encrypt(plaintext,mk)})
     rachet.Ns += 1
+    print(mk)
     return response
 
 def RatchetDecrypt(rachet, response):
+    plaintext = TrySkippedMessageKeys(rachet, response)
+    if plaintext != None:
+        return plaintext
     DHr=load_pem_public_key(bytes(response["DH"],encoding='utf-8'), backend=default_backend())
-    if DHr != rachet.DHr:           
-        DHRatchet(rachet, DHr)          
+    if response["DH"] != getPublicDHr(rachet): 
+        print("clave publica diferente")
+        SkipMessageKeys(rachet, response["PN"])          
+        DHRatchet(rachet, DHr)
+    SkipMessageKeys(rachet, response["PN"])           
     rachet.CKr, mk = kdf_ck(rachet.CKr)
+    print(mk)
     rachet.Nr += 1
     return decrypt(response["C"],mk)
 
+def TrySkippedMessageKeys(state:Rachet, response):
+    if (response["DH"], response["N"]) in state.MKSKIPPED:
+        mk = state.MKSKIPPED[response["DH"], response["N"]]
+        del state.MKSKIPPED[response["DH"], response["N"]]
+        return decrypt(response["C"],mk )
+    else:
+        return None
+
+def SkipMessageKeys(state, until):
+    if state.Nr + MAX_SKIP < until:
+        raise Exception()
+    if state.CKr != None:
+        while state.Nr < until:
+            state.CKr, mk = kdf_ck(state.CKr)
+            state.MKSKIPPED[state.DHr, state.Nr] = mk
+            state.Nr += 1
 
 def encrypt(msg:str,key):
     aesgcm = AESGCM(key)
@@ -88,6 +114,9 @@ def setDHr(rachet:Rachet,response):
 
 def getPublicDH(rachet:Rachet):
    return str(rachet.DHs.public_key().public_bytes(Encoding.PEM,PublicFormat.SubjectPublicKeyInfo),encoding='utf-8')
+
+def getPublicDHr(rachet:Rachet):
+    return str(rachet.DHr.public_bytes(Encoding.PEM,PublicFormat.SubjectPublicKeyInfo),encoding='utf-8')
 
 def getParametersDH(rachet:Rachet):
     return str(rachet.parameters.parameter_bytes(Encoding.PEM,ParameterFormat.PKCS3),encoding='utf-8')

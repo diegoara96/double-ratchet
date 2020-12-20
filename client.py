@@ -3,13 +3,12 @@ import threading
 from doublerachet import Rachet
 import doublerachet
 import json
-from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+
 
 broker='52.210.173.185'
 port=1883
 Qos=0
 result_available = threading.Event()
-
 
 
 def main():
@@ -23,7 +22,7 @@ def main():
 
     while True:
         message=input("MESSAGE: ")
-        if(rachet.DHr==0):
+        if(doublerachet.getPublicDHr(rachet)==doublerachet.getPublicDH(rachet)):
             msg=json.dumps({"DH":None,"C":None})
             publish(server,msg,name_to)
             result_available.wait()
