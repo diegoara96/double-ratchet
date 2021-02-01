@@ -5,9 +5,11 @@ import doublerachet
 import json
 
 
-broker='52.210.173.185'
+broker='IP'
 port=1883
 Qos=0
+user='MQTT_USERNAME'
+passwd='MQTT_PASSWD'
 result_available = threading.Event()
 
 
@@ -15,7 +17,7 @@ def main():
     name_from = input("FROM: ")
     name_to = input("TO: ")
     rachet=Rachet()
-    server=connect_mqtt(name_from,"sinf","snif20")
+    server=connect_mqtt(name_from,user,passwd)
     hilo1 = threading.Thread(target=subscribe,args=(server,name_from,rachet,name_to))
     hilo1.start()
 
