@@ -1,5 +1,5 @@
 # double-ratchet
-double ratchet
+Console message exchange program using double rachet and mqtt
 
 ## Instalación
 ```
